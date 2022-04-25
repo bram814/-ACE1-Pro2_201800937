@@ -31,9 +31,22 @@ imprimir macro texto
     int 21h
 endm
 
-leerusuario macro
+; ************** [READ USER] **************
+
+
+GetInputMax macro _resultS
+    mov ah, 3fh                     ; int21 para leer fichero o dispositivo
+    mov bx, 00                      ; handel para leer el teclado
+    mov cx, 20                      ; bytes a leer (aca las definimos con 10)
+    mov dx, offset[_resultS]
+    int 21h
+endm
+
+
+
+ReadUser macro
     local e1, e2
-    mov tamus, 0
+    mov _tam0, 0
     e1:
         xor ax, ax
         mov ah, 01h
@@ -41,15 +54,16 @@ leerusuario macro
         cmp al, 0dh
         je e2
         cmp al, 1bh
-        je inicio
-        mov usering[si], al
+        je Lmenu
+        mov _user[si], al
         inc si 
-        mov usering[si], '$'
+        mov _user[si], '$'
         jmp e1
     e2:
 endm
 
-leerpass macro
+
+ReadPassword macro
     local e1, e2
     e1:
         mov ax, 00h
@@ -58,10 +72,10 @@ leerpass macro
         cmp al, 0dh
         je e2
         cmp al, 1bh
-        je inicio
-        mov passing[si], al
+        je Lmenu
+        mov _password[si], al
         inc si
-        mov passing[si], '$'
+        mov _password[si], '$'
         mov ah, 2h
         mov dl, '*'
         int 21h
@@ -72,11 +86,11 @@ endm
 calctamuserle macro
     local e1, e2
     xor si, si
-    mov tamus, 0
+    mov _tam0, 0
     e1: 
-        cmp usering[si], '$'
+        cmp _user[si], '$'
         je e2
-        inc tamus
+        inc _tam0
         inc si
         jmp e1
     e2:
@@ -85,11 +99,11 @@ endm
 calctamuser macro
     local e1, e2
     xor si, si 
-    mov tamarch, 0
+    mov _tamFile, 0
     e1:
-        cmp usersaved[si], '$'
+        cmp _SavedUser[si], '$'
         je e2
-        inc tamarch
+        inc _tamFile
         inc si
         jmp e1
     e2:
@@ -99,11 +113,11 @@ endm
 calctampass macro
     local e1, e2
     xor si, si
-    mov tampass, 0
+    mov _tamPass, 0
     e1: 
-        cmp passing[si], '$'
+        cmp _password[si], '$'
         je e2
-        inc tampass
+        inc _tamPass
         inc si
         jmp e1
     e2:
@@ -114,10 +128,10 @@ login macro
     local e1, e2, e3, e4, e5, e6
     mov ah, 3dh
     mov al, 0h
-    mov dx, offset usuarios
+    mov dx, offset _usersFile
     int 21h
-    mov handle, ax
-    mov bx, handle
+    mov _handle, ax
+    mov bx, _handle
     mov ah, 42h
     mov al, 00h
     mov cx, 0
@@ -125,140 +139,140 @@ login macro
     int 21h
     e1:
         mov si, 00h
-        mov controlpass, 0
+        mov _controlPass, 0
         mov ah, 3fh
-        mov bx, handle
-        lea dx, auxcontenidoar
+        mov bx, _handle
+        lea dx, _auxContainer
         mov cx, 1
         int 21h
 
-        cmp auxcontenidoar[si], '$'
+        cmp _auxContainer[si], '$'
         je errornoexiste
-        cmp auxcontenidoar[si], ','
+        cmp _auxContainer[si], ','
         je e2
-        mov al, auxcontenidoar[si]
-        mov si, controlusers
-        mov usersaved[si], al
-        inc controlusers
+        mov al, _auxContainer[si]
+        mov si, _controlUser
+        mov _SavedUser[si], al
+        inc _controlUser
         inc si
-        mov usersaved[si], '$'
+        mov _SavedUser[si], '$'
         jmp e1
     e2:
         calctamuser
         calctamuserle
-        mov si, tamus
-        cmp tamarch, si
+        mov si, _tam0
+        cmp _tamFile, si
         je e3
         jne e4
     e3:
         xor si, si
     e6:
-        mov al, usersaved[si]
+        mov al, _SavedUser[si]
         cmp al, '$'
         je e7
-        cmp usering[si], al
+        cmp _user[si], al
         jne e4
         inc si
         jmp e6
     e4:
         mov si, 00h
-        mov controlusers, 0
+        mov _controlUser, 0
         mov ah, 3fh
-        mov bx, handle
-        lea dx, auxcontenidoar
+        mov bx, _handle
+        lea dx, _auxContainer
         mov cx, 1
         int 21h
-        cmp auxcontenidoar[si], 0dh
+        cmp _auxContainer[si], 0dh
         je e5
         jmp e4
     e5:
         mov si, 00h
         mov ah, 3fh
-        mov bx, handle
-        lea dx, auxcontenidoar
+        mov bx, _handle
+        lea dx, _auxContainer
         mov cx, 1
         int 21h
-        cmp auxcontenidoar[si], '$'
+        cmp _auxContainer[si], '$'
         je e1
-        cmp auxcontenidoar[si], 0ah
+        cmp _auxContainer[si], 0ah
         je e5
-        mov controlusers, 0
-        mov al, auxcontenidoar[si]
-        mov si, controlusers
-        mov usersaved[si], al
-        inc controlusers
+        mov _controlUser, 0
+        mov al, _auxContainer[si]
+        mov si, _controlUser
+        mov _SavedUser[si], al
+        inc _controlUser
         inc si
-        mov usersaved[si], '$'
+        mov _SavedUser[si], '$'
         jmp e1
     e7:
         mov si, 00h
         mov ah, 3fh
-        mov bx, handle
-        lea dx, auxcontenidoar
+        mov bx, _handle
+        lea dx, _auxContainer
         mov cx, 1
         int 21h
 
-        cmp auxcontenidoar[si], '$'
+        cmp _auxContainer[si], '$'
         je errorpass
-        cmp auxcontenidoar[si], 0dh
+        cmp _auxContainer[si], 0dh
         je e8
-        cmp auxcontenidoar[si], 0ah
+        cmp _auxContainer[si], 0ah
         je e8
-        mov al, auxcontenidoar[si]
-        mov si, controlpass
-        mov passsaved[si], al
-        inc controlpass
+        mov al, _auxContainer[si]
+        mov si, _controlPass
+        mov _SavePass[si], al
+        inc _controlPass
         inc si
-        mov passsaved[si], '$'
+        mov _SavePass[si], '$'
         jmp e7
     e8:
         calctampasss
         calctampass
-        mov si, tampass
-        cmp tamarch, si
+        mov si, _tamPass
+        cmp _tamFile, si
         je e9
         jne e10
     e9:
         xor si, si
     e12:
-        mov al, passsaved[si]
+        mov al, _SavePass[si]
         cmp al, '$'
         je ingresarsist
-        cmp passing[si], al
+        cmp _password[si], al
         jne e10
         inc si
         jmp e12
     e10:
         mov si, 00h
-        mov controlpass, 0
+        mov _controlPass, 0
         mov ah, 3fh
-        mov bx, handle
-        lea dx, auxcontenidoar
+        mov bx, _handle
+        lea dx, _auxContainer
         mov cx, 1
         int 21h
-        cmp auxcontenidoar[si], ','
+        cmp _auxContainer[si], ','
         je e11
-        cmp auxcontenidoar[si], '$'
+        cmp _auxContainer[si], '$'
         je errorpass
         jmp e10
     e11:
         mov si, 00h
         mov ah, 3fh
-        mov bx, handle
-        lea dx, auxcontenidoar
+        mov bx, _handle
+        lea dx, _auxContainer
         mov cx, 1
         int 21h
-        cmp auxcontenidoar[si], '$'
+        cmp _auxContainer[si], '$'
         je e7
-        cmp auxcontenidoar[si], ','
+        cmp _auxContainer[si], ','
         je e11
-        mov controlpass, 0
-        mov al, auxcontenidoar[si]
-        mov si, controlpass
-        mov passsaved[si], al
-        inc controlpass
+        mov _controlPass, 0
+        mov al, _auxContainer[si]
+        mov si, _controlPass
+        mov _SavePass[si], al
+        inc _controlPass
         inc si
-        mov passsaved[si], '$'
+        mov _SavePass[si], '$'
         jmp e7
 endm
 
@@ -266,11 +280,11 @@ endm
 calctampasss macro
     local e1, e2
     xor si, si
-    mov tamarch, 0
+    mov _tamFile, 0
     e1:
-        cmp passsaved[si], '$'
+        cmp _SavePass[si], '$'
         je e2
-        inc tamarch
+        inc _tamFile
         inc si
         jmp e1
     e2:
