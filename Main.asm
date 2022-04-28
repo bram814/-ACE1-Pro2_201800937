@@ -12,6 +12,15 @@ include Macros.asm
 _salto          db 0ah,0dh,               "$"
 _igual          db 0ah,0dh,               "=======================================$"
 _opcion         db 0ah,0dh,               "> Ingrese Opcion: $"
+_palo           db '|$'
+; ************** [ERRORES] **************
+_error1         db 0ah,0dh,               "> Error al Abrir Archivo, no Existe ",   "$"
+_error2         db 0ah,0dh,               "> Error al Cerrar Archivo",              "$"
+_error3         db 0ah,0dh,               "> Error al Escribir el Archivo",         "$"
+_error4         db 0ah,0dh,               "> Error al Crear el Archivo",            "$"
+_error5         db 0ah,0dh,               "> Error al Leer al Archivo",             "$"
+_error6         db 0ah,0dh,               "> Error en el Archivo",                  "$"
+_error7         db 0ah,0dh,               "> Error al crear el Archivo",                  "$"
 ; ************************* [ERRORES] ************************* 
 _msg1           db 0ah,0dh,               ">>          Permission denied          <<$"
 _msg2           db 0ah,0dh,               ">> There where 3 failed login attempts <<$"
@@ -34,22 +43,63 @@ _cadena10       db 0ah,0dh,               "F5. Register$"
 _cadena11       db 0ah,0dh,               "F9. Exit$"
 ; ************** [LOGIN] **************
 _cadena12       db 0ah,0dh,               "Login$"
-_cadena13       db                        "Username: $"
+_cadena13       db 0ah,0dh,               "Username: $"
 _cadena14       db                        "Password: $"
 ; ************** [DECLARACIONES] **************
 _user           db 100 dup('$');
-_usersFile      db  'Archivos', 92, 'users.gal', 0
 _password       db 100 dup('$')
 _SavedUser      db 100 dup('$')
 _SavePass       db 100 dup('$')
-_auxContainer   db 1   dup('$')
 _tam0           dw 0
 _tamPass        dw 0 
-_tamFile        dw 0
+_usersFile      db 'users.gal', '$'
+_auxContainer   db 1   dup('$')
 _controlUser    dw 0
 _controlPass    dw 0
-_handle         dw  ?
+_tamFile        dw 0
+_handle         dw ?
+_isBool         dw 0
 
+_bufferInput    db 50 dup('$')
+_handleInput    dw ? 
+_bufferInfo     db 2000 dup('$')
+
+; *********************** [VISTA DE JUEGO] ********************************
+; l1              db  'EJEMPLO 5', 10, 13, '$'
+; l2              db  'SE PULSO F1', 10, 13, '$'
+; l3              db  'SE PULSO F2', 10, 13, '$'
+; l4              db  'SE PULSO HOME', 10, 13, '$'
+; user            db  'oscar','$'
+; ;coordenadas nave
+; xnave           dw  0
+; ynave           dw  0
+; ;marco
+; lineamarco      db  24, 24, 24, 24, 24, 24, 24, 24, 24, 24, 24, 24, 24, 24, 24, 24, 24, 24, 24, 24 
+; lineamarco1     db  24, 24
+; ;nave
+; naveFila1       db  00, 00, 00, 00, 00, 39, 00, 00, 00, 00, 00
+; naveFila2       db  00, 00, 00, 00, 00, 15, 00, 00, 00, 00, 00
+; naveFila3       db  00, 00, 39, 00, 15, 11, 15, 00, 39, 00, 00
+; naveFila4       db  00, 15, 15, 15, 15, 11, 15, 15, 15, 15, 00
+; naveFila5       db  15, 15, 15, 15, 15, 11, 15, 15, 15, 15, 15
+; naveFila6       db  15, 15, 15, 15, 15, 11, 15, 15, 15, 15, 15
+; ;disparo
+; disparoFila1    db  12
+; disparoFila2    db  29
+; disparoFila3    db  29
+; disparoFila4    db  45
+; ;coordenadas disparo
+; xdis            dw  0
+; ydis            dw  0
+; contador        dw  0
+; ;tiempo
+; minutos         db  0
+; decminutos      db  0
+; uniminutos      db  0
+; segundos        db  0
+; decsegundos     db  0
+; unisegundos     db  0
+; micsegundos     db  0
 ; **************************** [IDENTIFICADOR] **************************** 
 identificador proc far
     GetPrint _salto
@@ -93,11 +143,54 @@ fnDenied proc far
     ret
 fnDenied endp
 
+; limpiarpantallag proc
+; ;vuelve a entrar en el modo video
+;     mov ah, 0
+;     mov al, 13h
+;     int 10h
+;     ret
+; limpiarpantallag endp
+
+; GetChar proc
+; ;lee un caracter
+;     xor ah, ah
+;     int 16h
+;     ret
+; GetChar endp
+
+
+; ; VSync proc
+; ; ;metodo de sincronizacion vertical de la pantalla
+; ;     mov dx, 03dah
+; ;     WaitNotVSync:
+; ;         in al, dx
+; ;         and al, 08h
+; ;         jnz WaitNotVSync
+; ;     WaitVSync:
+; ;         in al, dx
+; ;         and al, 08h
+; ;         jz WaitVSync
+; ;     ret
+; ; VSync endp
+
+; Delay proc
+; ;metodo para agregar un delay en microsegundos para refrescar la pantalla
+; ;los microsegundos se toman como cx:dx
+;     mov cx, 0000h
+;     mov dx, 0fffffh
+;     mov ah, 86h
+;     int 15h
+;     ret
+; Delay endp
+
 .code
 
 main proc
     mov ax, @data
     mov ds, ax
+    GetOpenFile _usersFile,_handleInput                          ; Abrir file
+    GetReadFile _handleInput,_bufferInfo,SIZEOF _bufferInfo       ; Guardar Contenido
+    GetCloseFile _handleInput
 
     Linicio:
     limpiarp
@@ -110,7 +203,12 @@ main proc
 
 
     Lmenu:
+        mov _tamFile, 0
+        xor si, si
+        xor bx, bx
+        xor al, al
         call fnMenu
+
 
         GetTeclado
         cmp ax,3b00h ; Codigo ASCCI [F1 -> Hexadecimal]
@@ -123,185 +221,54 @@ main proc
         jmp Lmenu
 
     Llogin:
-    
-        call fnLogin
+      
+       login
+       jmp Lsalir
 
-        xor si, si
-        GetPrint _cadena13
-        ReadUser
-
-        xor si, si
-        GetPrint _cadena14
-        ReadPassword
-
-
-         mov ah, 3dh
-        mov al, 0h
-        mov dx, offset _usersFile
-        int 21h
-        mov _handle, ax
-        mov bx, _handle
-        mov ah, 42h
-        mov al, 00h
-        mov cx, 0
-        mov dx, 0
-        int 21h
-        e1:
-            mov si, 00h
-            mov _controlPass, 0
-            mov ah, 3fh
-            mov bx, _handle
-            lea dx, _auxContainer
-            mov cx, 1
-            int 21h
-
-            cmp _auxContainer[si], '$'
-            je errornoexiste
-            cmp _auxContainer[si], ','
-            je e2
-            mov al, _auxContainer[si]
-            mov si, _controlUser
-            mov _SavedUser[si], al
-            inc _controlUser
-            inc si
-            mov _SavedUser[si], '$'
-            jmp e1
-        e2:
-            calctamuser
-            calctamuserle
-            mov si, _tam0
-            cmp _tamFile, si
-            je e3
-            jne e4
-        e3:
-            xor si, si
-        e6:
-            mov al, _SavedUser[si]
-            cmp al, '$'
-            je e7
-            cmp _user[si], al
-            jne e4
-            inc si
-            jmp e6
-        e4:
-            mov si, 00h
-            mov _controlUser, 0
-            mov ah, 3fh
-            mov bx, _handle
-            lea dx, _auxContainer
-            mov cx, 1
-            int 21h
-            cmp _auxContainer[si], 0dh
-            je e5
-            jmp e4
-        e5:
-            mov si, 00h
-            mov ah, 3fh
-            mov bx, _handle
-            lea dx, _auxContainer
-            mov cx, 1
-            int 21h
-            cmp _auxContainer[si], '$'
-            je e1
-            cmp _auxContainer[si], 0ah
-            je e5
-            mov _controlUser, 0
-            mov al, _auxContainer[si]
-            mov si, _controlUser
-            mov _SavedUser[si], al
-            inc _controlUser
-            inc si
-            mov _SavedUser[si], '$'
-            jmp e1
-        e7:
-            mov si, 00h
-            mov ah, 3fh
-            mov bx, _handle
-            lea dx, _auxContainer
-            mov cx, 1
-            int 21h
-
-            cmp _auxContainer[si], '$'
-            je errorpass
-            cmp _auxContainer[si], 0dh
-            je e8
-            cmp _auxContainer[si], 0ah
-            je e8
-            mov al, _auxContainer[si]
-            mov si, _controlPass
-            mov _SavePass[si], al
-            inc _controlPass
-            inc si
-            mov _SavePass[si], '$'
-            jmp e7
-        e8:
-            calctampasss
-            calctampass
-            mov si, _tamPass
-            cmp _tamFile, si
-            je e9
-            jne e10
-        e9:
-            xor si, si
-        e12:
-            mov al, _SavePass[si]
-            cmp al, '$'
-            je ingresarsist
-            cmp _password[si], al
-            jne e10
-            inc si
-            jmp e12
-        e10:
-            mov si, 00h
-            mov _controlPass, 0
-            mov ah, 3fh
-            mov bx, _handle
-            lea dx, _auxContainer
-            mov cx, 1
-            int 21h
-            cmp _auxContainer[si], ','
-            je e11
-            cmp _auxContainer[si], '$'
-            je errorpass
-            jmp e10
-        e11:
-            mov si, 00h
-            mov ah, 3fh
-            mov bx, _handle
-            lea dx, _auxContainer
-            mov cx, 1
-            int 21h
-            cmp _auxContainer[si], '$'
-            je e7
-            cmp _auxContainer[si], ','
-            je e11
-            mov _controlPass, 0
-            mov al, _auxContainer[si]
-            mov si, _controlPass
-            mov _SavePass[si], al
-            inc _controlPass
-            inc si
-            mov _SavePass[si], '$'
-            jmp e7
-        ingresarsist:
-            GetPrint _msg5
-            jmp Lmenu
-        errornoexiste:
-            imprimir _msg6
-            jmp Lmenu
-        errorpass:
-            mov ah, 3eh
-            int 21h
-            call fnDenied
-
-
+       
+    ingresarsist:
+        GetPrint _msg5
+        jmp Lmenu
+    errornoexiste:
+        mov _tamFile, 0
+        imprimir _msg6
+        jmp Lmenu
+    errorpass:
+        mov _tamFile, 0
+        call fnDenied
+        jmp Lmenu
     Lregistro:
         GetPrint _cadena10
         GetPrint _salto
         jmp Lmenu
 
+
+    Lerror1:
+        GetPrint _salto
+        GetPrint _error1
+        jmp Lmenu
+    Lerror2:
+        GetPrint _salto
+        GetPrint _error2
+        jmp Lmenu
+    Lerror3:
+        GetPrint _salto
+        GetPrint _error3
+        jmp Lmenu
+    Lerror4:
+        GetPrint _salto
+        GetPrint _error4
+        jmp Lmenu
+    Lerror5:
+        GetPrint _salto
+        GetPrint _error5
+        jmp Lmenu
+    Lerror7:
+        GetPrint _salto
+        GetPrint _error7
+        jmp Lsalir
     Lsalir:
-        limpiarp
+        ;limpiarp
         mov ax,4c00h
         int 21h
 
