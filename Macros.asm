@@ -229,6 +229,110 @@ GetVerifiedUser macro p1, p2
 
 endm
 
+
+; ************** [PATH][WRITE] **************
+GetWriteFile macro handler, buffer
+    LOCAL ciclo_Ini, ciclo_Fin
+    MOV AX,@data
+    MOV DS,AX
+    ; MOV AH,40h
+    ; MOV BX,handler
+    ; MOV CX, SIZEOF buffer 
+
+    XOR BX, BX
+    XOR AX, AX 
+    ciclo_Ini:
+      MOV AL, buffer[ BX ]
+      CMP AL, '$'
+      JE ciclo_Fin
+
+      INC BX 
+      JMP ciclo_Ini
+    ciclo_Fin:
+    XOR AX, AX
+
+    MOV contadorBuffer, BX
+    XOR BX, BX
+    
+    MOV AH,40h
+    MOV BX,handler
+    MOV CX, contadorBuffer
+    LEA DX, buffer
+    INT 21h
+endm
+
+; ************** [PATH][CREATE] **************
+GetCreateFile macro buffer,handler
+    MOV AX,@data
+    MOV DS,AX
+    MOV AH,3ch
+    MOV CX,00h
+    LEA DX,buffer
+    INT 21h
+    ;jc Error4
+    MOV handler, AX
+endm
+
+
+GetValidateUser macro p1, tam1, tam2
+    local e1, e2, e3, e4, e5
+
+    xor si, si
+    mov _isBool, 0
+
+    e1:
+
+        cmp p1[si], 24h
+        je e2
+
+        inc si
+        jmp e1
+
+    e2:
+        cmp si, tam1
+        jle e3
+
+        cmp si, tam2
+        jg e3
+
+        jmp e4
+    e3:
+        mov _isBool, 0
+        jmp e5
+    e4:
+        mov _isBool, 1
+        jmp e5
+    e5:
+
+
+endm
+
+
+ConcaUsers macro p1
+    local e1, e2, e3
+    xor si, si
+    e1: 
+
+        mov bl, p1[si]
+        mov _SavedUser[di], bl
+        cmp bl, 0Ah
+        je e2
+        cmp bl, '$'
+        je e2
+        INC si
+        INC di
+
+        jmp e1
+
+    e2:
+
+        
+        ; GetPrint _salto
+        ; GetPrint _SavedUser
+
+
+endm
+
 ; ; ****************************** NAVE ****************************
 
 

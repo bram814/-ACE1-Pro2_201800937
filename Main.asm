@@ -10,6 +10,7 @@ include Macros.asm
 ; ************************* DECLARACION DE VARIABLES ************************* 
 ; ************** [EXTRAS] **************
 _salto          db 0ah,0dh,               "$"
+_dolar          db                        24h, "$"
 _igual          db 0ah,0dh,               "=======================================$"
 _opcion         db 0ah,0dh,               "> Ingrese Opcion: $"
 _palo           db '|$'
@@ -28,6 +29,16 @@ _msg3           db 0ah,0dh,               ">>   Pease contact the administrator 
 _msg4           db 0ah,0dh,               ">>   Press Enter to go back to menu    <<$"
 _msg5           db 0ah,0dh,               ">>          Ingreso al Sistema         <<$"
 _msg6           db 0ah,0dh,               ">>         El Usuario No Existe        <<$"
+
+_msg7           db 0ah,0dh,               ">>                Action Rejected               <<$"
+_msg8           db 0ah,0dh,               ">>                                              <<$"
+_msg9           db 0ah,0dh,               ">> Missed requirements:                         <<$"
+_msg10          db 0ah,0dh,               ">> Username begins with a letter                <<$"
+_msg11          db 0ah,0dh,               ">> Username length between 8 and 15 characters  <<$"
+_msg12          db 0ah,0dh,               ">> Password must contain at least one number    <<$"
+_msg13          db 0ah,0dh,               ">> Password length at least 16 characters       <<$"
+_msg14          db 0ah,0dh,               ">>         Press Enter to go back to menu       <<$"
+
 ; ************** [IDENTIFICADOR] **************
 _cadena1        db 0ah,0dh,               "Universidad de San Carlos de Guatemala$"
 _cadena2        db 0ah,0dh,               "Facultad de Ingenieria$"
@@ -45,6 +56,7 @@ _cadena11       db 0ah,0dh,               "F9. Exit$"
 _cadena12       db 0ah,0dh,               "Login$"
 _cadena13       db 0ah,0dh,               "Username: $"
 _cadena14       db                        "Password: $"
+_cadena15       db 0ah,0dh,               "Register$"
 ; ************** [DECLARACIONES] **************
 _user           db 100 dup('$');
 _password       db 100 dup('$')
@@ -63,6 +75,8 @@ _isBool         dw 0
 _bufferInput    db 50 dup('$')
 _handleInput    dw ? 
 _bufferInfo     db 2000 dup('$')
+contadorBuffer  dw 0 ; Contador para todos los WRITE FILE, para escribir sin que se vean los $
+_reporteHandle  dw ?
 
 ; *********************** [VISTA DE JUEGO] ********************************
 ; l1              db  'EJEMPLO 5', 10, 13, '$'
@@ -142,6 +156,29 @@ fnDenied proc far
     GetPrint _salto
     ret
 fnDenied endp
+
+fnRegister proc far
+    GetPrint _salto 
+    GetPrint _cadena15
+    GetPrint _igual
+    ret
+fnRegister endp
+
+fnDeniedRegister proc far
+    GetPrint _salto
+    GetPrint _msg7
+    GetPrint _msg8
+    GetPrint _msg9
+    GetPrint _msg10
+    GetPrint _msg11
+    GetPrint _msg12
+    GetPrint _msg13
+    GetPrint _salto
+    GetPrint _msg14
+    GetPrint _salto
+    ret
+fnDeniedRegister endp
+
 
 ; limpiarpantallag proc
 ; ;vuelve a entrar en el modo video
@@ -238,8 +275,36 @@ main proc
         call fnDenied
         jmp Lmenu
     Lregistro:
-        GetPrint _cadena10
-        GetPrint _salto
+        call fnRegister
+        cleanVariable 100, _user
+        GetPrint _cadena13
+        GetInputMax _user
+
+        GetValidateUser _user, 9, 17
+
+        cmp _isBool, 0
+        je Lerror8
+
+        GetPrint _cadena14
+        ; ReadPassword
+        GetInputMax _password
+
+        xor di, di
+        ConcaUsers _user
+        dec si
+        mov bl, 2ch
+        mov _SavedUser[si], bl
+        
+        ConcaUsers _password
+
+        GetPrint _SavedUser
+
+        GetCreateFile _usersFile, _reporteHandle
+
+        GetWriteFile _reporteHandle, _SavedUser
+        GetWriteFile _reporteHandle, _bufferInfo
+        GetWriteFile _reporteHandle, _dolar
+
         jmp Lmenu
 
 
@@ -267,8 +332,16 @@ main proc
         GetPrint _salto
         GetPrint _error7
         jmp Lsalir
+    Lerror8:
+        call fnDeniedRegister
+        GetInput
+        cmp al,0Dh ; Codigo ASCCI [Enter -> Hexadecimal]
+        je Lmenu
+        jmp Lerror8
+
     Lsalir:
-        ;limpiarp
+        limpiarp
+
         mov ax,4c00h
         int 21h
 
