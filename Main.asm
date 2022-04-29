@@ -297,8 +297,6 @@ main proc
         
         ConcaUsers _password
 
-        GetPrint _SavedUser
-
         GetCreateFile _usersFile, _reporteHandle
 
         GetWriteFile _reporteHandle, _SavedUser
