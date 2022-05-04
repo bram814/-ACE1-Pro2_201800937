@@ -57,6 +57,15 @@ _cadena12       db 0ah,0dh,               "Login$"
 _cadena13       db 0ah,0dh,               "Username: $"
 _cadena14       db                        "Password: $"
 _cadena15       db 0ah,0dh,               "Register$"
+; ************** [LOGIN][MENU] **************
+_cadena16       db 0ah,0dh,               "User menu                 User: $"
+_cadena17       db 0ah,0dh,               "F2. Play game $"
+_cadena18       db 0ah,0dh,               "F3. Show top 10 scoreboard $"
+_cadena19       db 0ah,0dh,               "F5. Show my top 10 scoreboard $"
+_cadena20       db 0ah,0dh,               "F9. Logout"
+; ************** [DECLARACIONES] **************
+_cadena21       db 0ah,0dh,               "F9. Logout"
+
 ; ************** [DECLARACIONES] **************
 _user           db 100 dup('$');
 _password       db 100 dup('$')
@@ -78,42 +87,40 @@ _bufferInfo     db 2000 dup('$')
 contadorBuffer  dw 0 ; Contador para todos los WRITE FILE, para escribir sin que se vean los $
 _reporteHandle  dw ?
 
+; _vectorUser    db 2000 
+
 ; *********************** [VISTA DE JUEGO] ********************************
-; l1              db  'EJEMPLO 5', 10, 13, '$'
-; l2              db  'SE PULSO F1', 10, 13, '$'
-; l3              db  'SE PULSO F2', 10, 13, '$'
-; l4              db  'SE PULSO HOME', 10, 13, '$'
-; user            db  'oscar','$'
-; ;coordenadas nave
-; xnave           dw  0
-; ynave           dw  0
-; ;marco
-; lineamarco      db  24, 24, 24, 24, 24, 24, 24, 24, 24, 24, 24, 24, 24, 24, 24, 24, 24, 24, 24, 24 
-; lineamarco1     db  24, 24
-; ;nave
-; naveFila1       db  00, 00, 00, 00, 00, 39, 00, 00, 00, 00, 00
-; naveFila2       db  00, 00, 00, 00, 00, 15, 00, 00, 00, 00, 00
-; naveFila3       db  00, 00, 39, 00, 15, 11, 15, 00, 39, 00, 00
-; naveFila4       db  00, 15, 15, 15, 15, 11, 15, 15, 15, 15, 00
-; naveFila5       db  15, 15, 15, 15, 15, 11, 15, 15, 15, 15, 15
-; naveFila6       db  15, 15, 15, 15, 15, 11, 15, 15, 15, 15, 15
-; ;disparo
-; disparoFila1    db  12
-; disparoFila2    db  29
-; disparoFila3    db  29
-; disparoFila4    db  45
-; ;coordenadas disparo
-; xdis            dw  0
-; ydis            dw  0
-; contador        dw  0
-; ;tiempo
-; minutos         db  0
-; decminutos      db  0
-; uniminutos      db  0
-; segundos        db  0
-; decsegundos     db  0
-; unisegundos     db  0
-; micsegundos     db  0
+;coordenadas nave
+xnave           dw  0
+ynave           dw  0
+;marco
+lineamarco      db  24, 24, 24, 24, 24, 24, 24, 24, 24, 24, 24, 24, 24, 24, 24, 24, 24, 24, 24, 24 
+lineamarco1     db  24, 24
+;nave
+naveFila1       db  00, 00, 00, 00, 00, 39, 00, 00, 00, 00, 00
+naveFila2       db  00, 00, 00, 00, 00, 15, 00, 00, 00, 00, 00
+naveFila3       db  00, 00, 39, 00, 15, 11, 15, 00, 39, 00, 00
+naveFila4       db  00, 15, 15, 15, 15, 11, 15, 15, 15, 15, 00
+naveFila5       db  15, 15, 15, 15, 15, 11, 15, 15, 15, 15, 15
+naveFila6       db  15, 15, 15, 15, 15, 11, 15, 15, 15, 15, 15
+;disparo
+disparoFila1    db  12
+disparoFila2    db  29
+disparoFila3    db  29
+disparoFila4    db  45
+;coordenadas disparo
+xdis            dw  0
+ydis            dw  0
+contador        dw  0
+;tiempo
+minutos         db  0
+decminutos      db  0
+uniminutos      db  0
+segundos        db  0
+decsegundos     db  0
+unisegundos     db  0
+micsegundos     db  0
+
 ; **************************** [IDENTIFICADOR] **************************** 
 identificador proc far
     GetPrint _salto
@@ -179,46 +186,67 @@ fnDeniedRegister proc far
     ret
 fnDeniedRegister endp
 
+fnMenuLogin proc far
+    GetPrint _salto
+    GetPrint _cadena16
+    GetPrint _user
+    GetPrint _igual
+    GetPrint _cadena17
+    GetPrint _cadena18
+    GetPrint _cadena19
+    GetPrint _cadena20
+    GetPrint _salto
+    ret
+fnMenuLogin endp
 
-; limpiarpantallag proc
-; ;vuelve a entrar en el modo video
-;     mov ah, 0
-;     mov al, 13h
-;     int 10h
+GetChar proc far
+;lee un caracter
+    xor ah, ah
+    int 16h
+    ret
+GetChar endp
+
+
+limpiarpantallag proc
+;vuelve a entrar en el modo video
+    mov ah, 0
+    mov al, 13h
+    int 10h
+    ret
+limpiarpantallag endp
+
+; VSync proc
+; ;metodo de sincronizacion vertical de la pantalla
+;     mov dx, 03dah
+;     WaitNotVSync:
+;         in al, dx
+;         and al, 08h
+;         jnz WaitNotVSync
+;     WaitVSync:
+;         in al, dx
+;         and al, 08h
+;         jz WaitVSync
 ;     ret
-; limpiarpantallag endp
+; VSync endp
 
-; GetChar proc
-; ;lee un caracter
-;     xor ah, ah
-;     int 16h
-;     ret
-; GetChar endp
+Delay proc far
+;metodo para agregar un delay en microsegundos para refrescar la pantalla
+;los microsegundos se toman como cx:dx
+    mov cx, 0000h
+    mov dx, 0fffffh
+    mov ah, 86h
+    int 15h
+    ret
+Delay endp
 
-
-; ; VSync proc
-; ; ;metodo de sincronizacion vertical de la pantalla
-; ;     mov dx, 03dah
-; ;     WaitNotVSync:
-; ;         in al, dx
-; ;         and al, 08h
-; ;         jnz WaitNotVSync
-; ;     WaitVSync:
-; ;         in al, dx
-; ;         and al, 08h
-; ;         jz WaitVSync
-; ;     ret
-; ; VSync endp
-
-; Delay proc
-; ;metodo para agregar un delay en microsegundos para refrescar la pantalla
-; ;los microsegundos se toman como cx:dx
-;     mov cx, 0000h
-;     mov dx, 0fffffh
-;     mov ah, 86h
-;     int 15h
-;     ret
-; Delay endp
+HasKey proc
+;verifica si se ha pulsado una tecla
+    push ax
+    mov ah, 01h
+    int 16h
+    pop ax
+    ret
+HasKey endp
 
 .code
 
@@ -259,13 +287,28 @@ main proc
 
     Llogin:
       
-       login
-       jmp Lsalir
+        login
+        jmp Llogin
 
+    LMenuLogin:
+        call fnMenuLogin
+        GetTeclado
+        cmp ax,3C00h ; Codigo ASCCI [F2 -> Hexadecimal]
+        je Lplay
+        cmp ax,3d00h ; Codigo ASCCI [F3 -> Hexadecimal]
+        je Lregistro
+        cmp ax,3f00h ; Codigo ASCCI [F5 -> Hexadecimal]
+        je Lregistro
+        cmp ax,4300h ; Codigo ASCCI [F9 -> Hexadecimal]
+        je Lmenu
+    Lplay:
+        
+        GetPlay
+        jmp LMenuLogin
        
     ingresarsist:
         GetPrint _msg5
-        jmp Lmenu
+        jmp LMenuLogin
     errornoexiste:
         mov _tamFile, 0
         imprimir _msg6
